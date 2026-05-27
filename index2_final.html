@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth overflow-x-hidden">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GatheringWildz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        wildz: {
+                            50: '#fafafa',
+                            100: '#f5f5f5',
+                            200: '#e5e5e5',
+                            300: '#d4d4d4',
+                            400: '#a3a3a3',
+                            500: '#737373',
+                            600: '#525252',
+                            700: '#404040',
+                            800: '#262626',
+                            900: '#171717',
+                            950: '#0a0a0a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer base {
+            body {
+                @apply bg-wildz-950 text-wildz-100 antialiased;
+                font-family: 'Inter', sans-serif;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                font-family: 'Playfair Display', serif;
+            }
+        }
+        @layer components {
+            .glass-wildz {
+                @apply bg-wildz-900/40 backdrop-blur-xl border border-wildz-800/50;
+            }
+            .text-muted {
+                @apply text-wildz-400;
+            }
+            .hover-lift {
+                @apply transition-all duration-500 hover:-translate-y-1;
+            }
+            .line-accent {
+                @apply w-12 h-px bg-wildz-400;
+            }
+        }
+    </style>
+    <style>
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .film-grain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        .nav-link {
+            position: relative;
+            letter-spacing: 0.05em;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #a3a3a3;
+            transition: width 0.4s ease;
+        }
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+        .film-card:hover .film-overlay {
+            opacity: 1;
+        }
+        .film-card:hover img {
+            transform: scale(1.03);
+        }
+        .chart-line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            transition: stroke-dashoffset 2s ease-out;
+        }
+        .chart-line.active {
+            stroke-dashoffset: 0;
+        }
+        .progress-fill {
+            width: 0;
+            transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .progress-fill.active {
+            width: var(--target-width);
+        }
+        .typing-cursor::after {
+            content: '_';
+            animation: blink 1.2s infinite;
+            color: #a3a3a3;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .vignette {
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.5);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #404040;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #525252;
+        }
+
+        /* Marquee Styles - Always running, no pause */
+        .marquee-container {
+            overflow: hidden;
+            position: relative;
+            width: 100%;
+            mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+        }
+        .marquee-track {
+            display: flex;
+            width: max-content;
+            gap: 0.75rem;
+            will-change: transform;
+            backface-visibility: hidden;
+            transform: translateZ(0);
+        }
+        .marquee-left {
+            animation: scrollLeft 30s linear infinite;
+        }
+        .marquee-right {
+            animation: scrollRight 30s linear infinite;
+        }
+        @keyframes scrollLeft {
+            0% { transform: translateX(0) translateZ(0); }
+            100% { transform: translateX(-50%) translateZ(0); }
+        }
+        @keyframes scrollRight {
+            0% { transform: translateX(-50%) translateZ(0); }
+            100% { transform: translateX(0) translateZ(0); }
+        }
+        .marquee-item {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            background: rgba(23, 23, 23, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(38, 38, 38, 0.5);
+            border-radius: 0.125rem;
+            transition: all 0.3s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: pan-y;
+        }
+        .marquee-item:hover {
+            border-color: rgba(82, 82, 82, 0.8);
+            background: rgba(38, 38, 38, 0.5);
+        }
+        .marquee-item img {
+            width: 2rem;
+            height: 2rem;
+            object-fit: contain;
+            pointer-events: none;
+            flex-shrink: 0;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body class="bg-wildz-950 text-wildz-100 overflow-x-hidden">
+    <div class="film-grain"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-wildz border-b border-wildz-800/30 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="#home" class="font-serif text-xl sm:text-2xl tracking-wide font-medium">
+                    GatheringWildz
+                </a>
+
+                <div class="hidden md:flex items-center space-x-10">
+                    
+                    <a href="#dashboard" class="nav-link">Dashboard</a>
+                    <a href="#projects" class="nav-link">Projects</a>
+                                                            <a href="#about" class="nav-link">About</a>
+                </div>
+
+                <button id="mobile-btn" class="md:hidden p-2 text-wildz-300 hover:text-wildz-100 transition-colors focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden glass-wildz border-t border-wildz-800/30">
+            <div class="px-6 py-6 space-y-4">
+                
+                <a href="#dashboard" class="block nav-link text-sm">Dashboard</a>
+                <a href="#projects" class="block nav-link text-sm">Projects</a>
+                                                <a href="#about" class="block nav-link text-sm">About</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section id="home" class="relative min-h-screen flex items-center justify-center vignette">
+        <div class="absolute inset-0 bg-gradient-to-b from-wildz-950 via-wildz-900/50 to-wildz-950"></div>
+        <div class="absolute inset-0 opacity-20">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-wildz-800 rounded-full filter blur-[128px]"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-wildz-800 rounded-full filter blur-[128px]"></div>
+        </div>
+
+        <div class="relative z-10 max-w-5xl mx-auto px-6 text-center">
+
+            <h1 class="font-serif text-[clamp(2.5rem,10vw,9rem)] leading-[0.9] font-medium tracking-tight mb-8 reveal break-words" style="transition-delay: 0.1s">
+                Gathering<br><span class="italic text-wildz-400">Wildz</span>
+            </h1>
+
+            <p class="text-base text-wildz-400 max-w-xl mx-auto mb-12 leading-relaxed reveal" style="transition-delay: 0.2s">
+                Hayyoo. <br>
+                <span class="typing-cursor text-wildz-300"></span>
+            </p>
+
+            <div class="flex flex-row items-center justify-center gap-3 sm:gap-6 reveal" style="transition-delay: 0.3s">
+                
+                <a href="#dashboard" class="px-5 sm:px-10 py-3 sm:py-4 border border-wildz-600 text-wildz-300 text-[10px] sm:text-xs tracking-[0.2em] uppercase hover:bg-wildz-800 hover:text-wildz-100 transition-all duration-500 whitespace-nowrap">
+                    View Dashboard
+                </a>
+                <a href="#projects" class="px-5 sm:px-10 py-3 sm:py-4 bg-wildz-100 text-wildz-950 text-[10px] sm:text-xs tracking-[0.2em] uppercase hover:bg-wildz-300 transition-all duration-500 whitespace-nowrap">
+                    Explore
+                </a>
+            </div>
+        </div>
+
+        <div class="absolute bottom-12 left-1/2 -translate-x-1/2">
+            <div class="w-px h-16 bg-gradient-to-b from-wildz-600 to-transparent"></div>
+        </div>
+    </section>
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="py-20 md:py-32 relative bg-wildz-900/30 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-12 md:mb-20">
+                <div class="reveal">
+                    <div class="line-accent mb-6"></div>
+                    <p class="text-xs tracking-[0.3em] uppercase text-wildz-500 mb-4">Overview</p>
+                    <h2 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-medium">Dashboard</h2>
+                </div>
+                <p class="text-wildz-400 max-w-md mt-6 md:mt-0 text-sm leading-relaxed reveal">
+                    Track my journey, skills progression, and project milestones across web, game, and AI development.
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-6 mb-8">
+                <!-- Metric Cards -->
+                <div class="glass-wildz rounded-sm p-6 sm:p-8 reveal">
+                    <p class="text-xs tracking-[0.2em] uppercase text-wildz-500 mb-4">Projects Completed</p>
+                    <p class="font-serif text-4xl sm:text-5xl text-wildz-200 mb-2">15</p>
+                    <div class="flex items-center space-x-2 text-sm">
+                        <span class="text-wildz-400">+8</span>
+                        <span class="text-wildz-600">from last semester</span>
+                    </div>
+                </div>
+                <div class="glass-wildz rounded-sm p-8 reveal" style="transition-delay: 0.1s">
+                    <p class="text-xs tracking-[0.2em] uppercase text-wildz-500 mb-4">Tech Stack</p>
+                    <p class="font-serif text-4xl sm:text-5xl text-wildz-200 mb-2">12</p>
+                    <div class="flex items-center space-x-2 text-sm">
+                        <span class="text-wildz-400">Technologies</span>
+    
+                    </div>
+                </div>
+                <div class="glass-wildz rounded-sm p-8 reveal" style="transition-delay: 0.2s">
+                    <p class="text-xs tracking-[0.2em] uppercase text-wildz-500 mb-4">Coding Hours</p>
+                    <p class="font-serif text-4xl sm:text-5xl text-wildz-200 mb-2">1,240</p>
+                    <div class="flex items-center space-x-2 text-sm">
+                        <span class="text-wildz-400">hrs</span>
+                        <span class="text-wildz-600">this year</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-6">
+                <div class="glass-wildz rounded-sm p-6 sm:p-8 reveal">
+                    <p class="text-xs tracking-[0.2em] uppercase text-wildz-500 mb-6">Skills Proficiency</p>
+                    <div class="space-y-6">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-sm text-wildz-400">Web Development</span>
+                                <span class="text-sm text-wildz-300">85%</span>
+                            </div>
+                            <div class="h-1 bg-wildz-800 rounded-full overflow-hidden">
+                                <div class="progress-fill h-full bg-wildz-400 rounded-full" style="--target-width: 85%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-sm text-wildz-400">Game Development</span>
+                                <span class="text-sm text-wildz-300">70%</span>
+                            </div>
+                            <div class="h-1 bg-wildz-800 rounded-full overflow-hidden">
+                                <div class="progress-fill h-full bg-wildz-400 rounded-full" style="--target-width: 70%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-sm text-wildz-400">AI & Machine Learning</span>
+                                <span class="text-sm text-wildz-300">65%</span>
+                            </div>
+                            <div class="h-1 bg-wildz-800 rounded-full overflow-hidden">
+                                <div class="progress-fill h-full bg-wildz-400 rounded-full" style="--target-width: 65%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-sm text-wildz-400">UI / UX Design</span>
+                                <span class="text-sm text-wildz-300">78%</span>
+                            </div>
+                            <div class="h-1 bg-wildz-800 rounded-full overflow-hidden">
+                                <div class="progress-fill h-full bg-wildz-400 rounded-full" style="--target-width: 78%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-wildz rounded-sm p-8 reveal" style="transition-delay: 0.1s">
+                    <p class="text-xs tracking-[0.2em] uppercase text-wildz-500 mb-6">Weekly Activity</p>
+                    <div class="flex items-end justify-between h-40 px-2">
+                        <div class="w-6 sm:w-8 bg-wildz-800 rounded-t-sm" style="height: 45%"></div>
+                        <div class="w-6 sm:w-8 bg-wildz-700 rounded-t-sm" style="height: 70%"></div>
+                        <div class="w-6 sm:w-8 bg-wildz-800 rounded-t-sm" style="height: 55%"></div>
+                        <div class="w-6 sm:w-8 bg-wildz-600 rounded-t-sm" style="height: 90%"></div>
+                        <div class="w-6 sm:w-8 bg-wildz-800 rounded-t-sm" style="height: 60%"></div>
+                        <div class="w-6 sm:w-8 bg-wildz-700 rounded-t-sm" style="height: 75%"></div>
+                        <div class="w-6 sm:w-8 bg-wildz-800 rounded-t-sm" style="height: 50%"></div>
+                    </div>
+                    <div class="flex justify-between mt-4 px-2">
+                        <span class="text-xs text-wildz-600">Mon</span>
+                        <span class="text-xs text-wildz-600">Tue</span>
+                        <span class="text-xs text-wildz-600">Wed</span>
+                        <span class="text-xs text-wildz-600">Thu</span>
+                        <span class="text-xs text-wildz-600">Fri</span>
+                        <span class="text-xs text-wildz-600">Sat</span>
+                        <span class="text-xs text-wildz-600">Sun</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Projects Section -->
+    <section id="projects" class="py-20 md:py-32 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-12 md:mb-20">
+                <div class="reveal">
+                    <div class="line-accent mb-6"></div>
+                    <p class="text-xs tracking-[0.3em] uppercase text-wildz-500 mb-4">Showcase</p>
+                    <h2 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-medium">Projects</h2>
+                </div>
+                <p class="text-wildz-400 max-w-md mt-6 md:mt-0 text-sm leading-relaxed reveal">
+                    Selected works across web development, AI tools, and game experiments.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Project 1: WildzDownloader -->
+                <a href="https://wildz-downloader.edgeone.app/" target="_blank" rel="noopener noreferrer" 
+                   class="glass-wildz rounded-sm p-8 reveal group hover:border-wildz-600/60 transition-all duration-500 block">
+                    <div class="flex items-start justify-between mb-6">
+                        <div class="w-10 h-10 rounded-sm bg-wildz-800/60 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-wildz-400 group-hover:text-wildz-200 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                        </div>
+                        <span class="flex items-center gap-1.5 text-[10px] text-emerald-400">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Live
+                        </span>
+                    </div>
+                    <h3 class="font-serif text-xl text-wildz-200 mb-2 group-hover:text-wildz-100 transition-colors">WildzDownloader</h3>
+                    <p class="text-sm text-wildz-500 leading-relaxed mb-6">All-in-one media downloader. TikTok, Instagram, YouTube, Facebook, Twitter — tanpa watermark.</p>
+                    <div class="flex items-center gap-2">
+                        <span class="px-3 py-1.5 bg-wildz-800/60 text-[10px] text-wildz-400 rounded-sm">Node.js</span>
+                        <span class="px-3 py-1.5 bg-wildz-800/60 text-[10px] text-wildz-400 rounded-sm">API</span>
+                        <span class="px-3 py-1.5 bg-wildz-800/60 text-[10px] text-wildz-400 rounded-sm">Tailwind</span>
+                    </div>
+                    <div class="mt-6 flex items-center gap-2 text-xs text-wildz-500 group-hover:text-wildz-300 transition-colors">
+                        <span>Buka</span>
+                        <svg class="w-3 h-3 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                        </svg>
+                    </div>
+                </a>
+
+                <!-- Project 2: DiaryAi -->
+                <a href="https://diary-ai.edgeone.app/" target="_blank" rel="noopener noreferrer" 
+                   class="glass-wildz rounded-sm p-8 reveal group hover:border-wildz-600/60 transition-all duration-500 block" style="transition-delay: 0.1s">
+                    <div class="flex items-start justify-between mb-6">
+                        <div class="w-10 h-10 rounded-sm bg-wildz-800/60 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-wildz-400 group-hover:text-wildz-200 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <span class="flex items-center gap-1.5 text-[10px] text-emerald-400">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Live
+                        </span>
+                    </div>
+                    <h3 class="font-serif text-xl text-wildz-200 mb-2 group-hover:text-wildz-100 transition-colors">DiaryAi</h3>
+                    <p class="text-sm text-wildz-500 leading-relaxed mb-6">Multi-model AI chat assistant. Tanyakan apa aja dengan berbagai models AI.</p>
+                    <div class="flex items-center gap-2">
+                        <span class="px-3 py-1.5 bg-wildz-800/60 text-[10px] text-wildz-400 rounded-sm">React</span>
+                        <span class="px-3 py-1.5 bg-wildz-800/60 text-[10px] text-wildz-400 rounded-sm">AI API</span>
+                        <span class="px-3 py-1.5 bg-wildz-800/60 text-[10px] text-wildz-400 rounded-sm">EdgeOne</span>
+                    </div>
+                    <div class="mt-6 flex items-center gap-2 text-xs text-wildz-500 group-hover:text-wildz-300 transition-colors">
+                        <span>Buka</span>
+                        <svg class="w-3 h-3 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                        </svg>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+<!-- About Section -->
+    <section id="about" class="py-20 md:py-32 relative overflow-hidden">
+        <!-- Background ambient glows -->
+        <div class="absolute top-1/3 left-0 w-[600px] h-[600px] bg-wildz-800/15 rounded-full filter blur-[150px] -translate-x-1/2 pointer-events-none"></div>
+        <div class="absolute bottom-1/4 right-0 w-[500px] h-[500px] bg-wildz-700/10 rounded-full filter blur-[120px] translate-x-1/3 pointer-events-none"></div>
+
+        <div class="max-w-6xl mx-auto px-6 lg:px-8 relative z-10">
+            <!-- Header -->
+            <div class="mb-12 md:mb-20 reveal">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="line-accent"></div>
+                    <p class="text-xs tracking-[0.3em] uppercase text-wildz-500">Who I Am</p>
+                </div>
+                <h2 class="font-serif text-4xl sm:text-5xl lg:text-7xl font-medium tracking-tight">About</h2>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="grid lg:grid-cols-12 gap-8 lg:gap-16 items-center">
+
+                <!-- Photo Column -->
+                <div class="lg:col-span-5 reveal">
+                    <div class="relative mx-auto max-w-xs sm:max-w-sm lg:max-w-none">
+
+                        <!-- Outer decorative frame -->
+                        <div class="absolute -inset-2 sm:-inset-3 lg:-inset-4 border border-wildz-700/40 rounded-sm"></div>
+
+                        <!-- Corner accents -->
+                        <div class="absolute -top-1 -left-1 w-4 h-4 sm:w-6 sm:h-6 border-t-2 border-l-2 border-wildz-500/60 z-20"></div>
+                        <div class="absolute -top-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 border-t-2 border-r-2 border-wildz-500/60 z-20"></div>
+                        <div class="absolute -bottom-1 -left-1 w-4 h-4 sm:w-6 sm:h-6 border-b-2 border-l-2 border-wildz-500/60 z-20"></div>
+                        <div class="absolute -bottom-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 border-b-2 border-r-2 border-wildz-500/60 z-20"></div>
+
+                        <!-- Offset inner frame -->
+                        <div class="absolute inset-0 border border-wildz-600/30 rounded-sm translate-x-2 translate-y-2"></div>
+
+                        <!-- Photo -->
+                        <div class="relative aspect-[4/5] sm:aspect-[3/4] bg-wildz-900 overflow-hidden rounded-sm">
+                            <img src="https://cdn.phototourl.com/member/2026-05-15-14f32403-7c04-4d30-89cc-f3cee01da654.jpg"
+                                 alt="Wildan Ngajizi"
+                                 class="w-full h-full object-cover object-top"
+                                 loading="lazy">
+
+                            <!-- Bottom gradient -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-wildz-950 via-wildz-950/40 to-transparent"></div>
+
+                            <!-- Name overlay -->
+                            <div class="absolute bottom-6 left-6 right-6">
+                                <p class="font-serif text-xl sm:text-2xl text-wildz-100">Wildan Ngajizi</p>
+                                <p class="text-[10px] tracking-[0.25em] uppercase text-wildz-400 mt-1">Software & Game Developer</p>
+                            </div>
+                        </div>
+
+                        <!-- Year badge -->
+                        <div class="absolute -bottom-3 -right-3 sm:-bottom-5 sm:-right-5 glass-wildz px-3 py-2 sm:px-5 sm:py-3 rounded-sm z-20">
+                            <p class="font-serif text-xl sm:text-2xl text-wildz-200">2026</p>
+                            <p class="text-[9px] tracking-[0.2em] uppercase text-wildz-500">Graduate</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Column -->
+                <div class="lg:col-span-7 reveal" style="transition-delay: 0.15s">
+
+                    <!-- Intro -->
+                    <div class="mb-8 md:mb-10">
+                        <h3 class="font-serif text-2xl sm:text-3xl lg:text-4xl leading-tight mb-6">
+                            Building digital experiences at the intersection of <span class="italic text-wildz-400">code</span> and <span class="italic text-wildz-400">creativity</span>.
+                        </h3>
+                        <div class="space-y-4 text-wildz-400 leading-[1.8]">
+                            <p>
+                                Graduate of <span class="text-wildz-200">SMKN 2 Kota Jambi</span>, jurusan <span class="text-wildz-200">Pengembangan Perangkat Lunak & Gim</span> — angkatan 61.
+                            </p>
+                            <p>
+                                Berpengalaman dalam membangun aplikasi web dan eksplorasi AI. Setiap proyek adalah kesempatan untuk mendorong batas antara teknologi dan seni.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="w-full h-px bg-wildz-800/60 mb-10"></div>
+
+                    <!-- Skills -->
+                    <div class="mb-8 md:mb-10">
+                        <p class="text-[10px] tracking-[0.25em] uppercase text-wildz-500 mb-4 md:mb-5">Expertise</p>
+                        <div class="flex flex-wrap gap-2 sm:gap-3">
+                            <span class="px-5 py-2.5 bg-wildz-900/60 border border-wildz-800 text-xs tracking-wide text-wildz-300 hover:bg-wildz-800 hover:border-wildz-600 transition-all duration-300">Web Development</span>
+                            <span class="px-5 py-2.5 bg-wildz-900/60 border border-wildz-800 text-xs tracking-wide text-wildz-300 hover:bg-wildz-800 hover:border-wildz-600 transition-all duration-300">Game Development</span>
+                            <span class="px-5 py-2.5 bg-wildz-900/60 border border-wildz-800 text-xs tracking-wide text-wildz-300 hover:bg-wildz-800 hover:border-wildz-600 transition-all duration-300">AI Integration</span>
+                            <span class="px-5 py-2.5 bg-wildz-900/60 border border-wildz-800 text-xs tracking-wide text-wildz-300 hover:bg-wildz-800 hover:border-wildz-600 transition-all duration-300">UI / UX Design</span>
+                            <span class="px-5 py-2.5 bg-wildz-900/60 border border-wildz-800 text-xs tracking-wide text-wildz-300 hover:bg-wildz-800 hover:border-wildz-600 transition-all duration-300">Visual Production</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack Section -->
+    <section id="stack" class="py-20 md:py-32 relative bg-wildz-900/20 overflow-hidden">
+        <div class="max-w-6xl mx-auto px-6 lg:px-8">
+            <div class="mb-16 reveal">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="line-accent"></div>
+                    <p class="text-xs tracking-[0.3em] uppercase text-wildz-500">Arsenal</p>
+                </div>
+                <h2 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight">Tech Stack</h2>
+            </div>
+
+            <!-- Languages → Left -->
+            <div class="mb-8 reveal">
+                <p class="text-[10px] tracking-[0.25em] uppercase text-wildz-500 mb-4">Languages</p>
+                <div class="marquee-container">
+                    <div class="marquee-track marquee-left">
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/php/php-original.svg" alt="PHP" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">PHP</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg" alt="JS" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">JavaScript</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original.svg" alt="Python" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Python</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg" alt="HTML" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">HTML</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" alt="CSS" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">CSS</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/mysql/mysql-original.svg" alt="SQL" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">SQL</span></div>
+                        <!-- Duplicate for seamless loop -->
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/php/php-original.svg" alt="PHP" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">PHP</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg" alt="JS" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">JavaScript</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original.svg" alt="Python" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Python</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg" alt="HTML" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">HTML</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" alt="CSS" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">CSS</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/mysql/mysql-original.svg" alt="SQL" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">SQL</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Frameworks → Right -->
+            <div class="mb-8 reveal" style="transition-delay: 0.1s">
+                <p class="text-[10px] tracking-[0.25em] uppercase text-wildz-500 mb-4">Frameworks</p>
+                <div class="marquee-container">
+                    <div class="marquee-track marquee-right">
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg" alt="Tailwind" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Tailwind</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/laravel/laravel-original.svg" alt="Laravel" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Laravel</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" alt="React" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">React</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg" alt="Node" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Node.js</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/bootstrap/bootstrap-original.svg" alt="Bootstrap" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Bootstrap</span></div>
+                        <!-- Duplicate for seamless loop -->
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg" alt="Tailwind" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Tailwind</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/laravel/laravel-original.svg" alt="Laravel" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Laravel</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" alt="React" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">React</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg" alt="Node" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Node.js</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/bootstrap/bootstrap-original.svg" alt="Bootstrap" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Bootstrap</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Dev → Left -->
+            <div class="mb-8 reveal" style="transition-delay: 0.2s">
+                <p class="text-[10px] tracking-[0.25em] uppercase text-wildz-500 mb-4">Game Dev</p>
+                <div class="marquee-container">
+                    <div class="marquee-track marquee-left">
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/godot/godot-original.svg" alt="Godot" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Godot</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/unity/unity-original.svg" alt="Unity" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Unity</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/godot/godot-original.svg" alt="GDScript" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">GDScript</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/csharp/csharp-original.svg" alt="C#" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">C#</span></div>
+                        <!-- Duplicate for seamless loop -->
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/godot/godot-original.svg" alt="Godot" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Godot</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/unity/unity-original.svg" alt="Unity" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Unity</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/godot/godot-original.svg" alt="GDScript" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">GDScript</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/csharp/csharp-original.svg" alt="C#" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">C#</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Tools → Right -->
+            <div class="mb-8 reveal" style="transition-delay: 0.3s">
+                <p class="text-[10px] tracking-[0.25em] uppercase text-wildz-500 mb-4">AI Tools</p>
+                <div class="marquee-container">
+                    <div class="marquee-track marquee-right">
+                        <!-- Claude - SimpleIcons (no bg) -->
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.simpleicons.org/anthropic/CC785C" alt="Claude" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Claude</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.simpleicons.org/deepseek/4D6BFA" alt="DeepSeek" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">DeepSeek</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.simpleicons.org/googlegemini/8E75B2" alt="Gemini" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Gemini</span></div>
+                        <!-- ChatGPT - icons8 (no bg, yang sebelumnya) -->
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://img.icons8.com/color/96/chatgpt.png" alt="ChatGPT" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">ChatGPT</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.simpleicons.org/githubcopilot/6E40C9" alt="Copilot" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Copilot</span></div>
+                        <!-- Duplicate for seamless loop -->
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.simpleicons.org/anthropic/CC785C" alt="Claude" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Claude</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.simpleicons.org/deepseek/4D6BFA" alt="DeepSeek" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">DeepSeek</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.simpleicons.org/googlegemini/8E75B2" alt="Gemini" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Gemini</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://img.icons8.com/color/96/chatgpt.png" alt="ChatGPT" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">ChatGPT</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.simpleicons.org/githubcopilot/6E40C9" alt="Copilot" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Copilot</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tools & Platforms → Left -->
+            <div class="reveal" style="transition-delay: 0.2s">
+                <p class="text-[10px] tracking-[0.25em] uppercase text-wildz-500 mb-4">Tools & Platforms</p>
+                <div class="marquee-container">
+                    <div class="marquee-track marquee-left">
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg" alt="Git" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Git</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.simpleicons.org/github/white" alt="GitHub" loading="lazy" draggable="false" style="filter: drop-shadow(0 0 4px rgba(255,255,255,0.15));"></div><span class="text-[10px] text-wildz-400 tracking-wide">GitHub</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vscode/vscode-original.svg" alt="VS Code" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">VS Code</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/figma/figma-original.svg" alt="Figma" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Figma</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vercel/vercel-original.svg" alt="Vercel" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Vercel</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/cloudflare/cloudflare-original.svg" alt="Cloudflare" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Cloudflare</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/mysql/mysql-original.svg" alt="MySQL" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">MySQL</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-original.svg" alt="Docker" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Docker</span></div>
+                        <!-- Duplicate for seamless loop -->
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg" alt="Git" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Git</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.simpleicons.org/github/white" alt="GitHub" loading="lazy" draggable="false" style="filter: drop-shadow(0 0 4px rgba(255,255,255,0.15));"></div><span class="text-[10px] text-wildz-400 tracking-wide">GitHub</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vscode/vscode-original.svg" alt="VS Code" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">VS Code</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/figma/figma-original.svg" alt="Figma" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Figma</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vercel/vercel-original.svg" alt="Vercel" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Vercel</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/cloudflare/cloudflare-original.svg" alt="Cloudflare" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Cloudflare</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/mysql/mysql-original.svg" alt="MySQL" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">MySQL</span></div>
+                        <div class="marquee-item"><div class="w-8 h-8 flex items-center justify-center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-original.svg" alt="Docker" loading="lazy" draggable="false"></div><span class="text-[10px] text-wildz-400 tracking-wide">Docker</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-wildz-800/50 py-10 md:py-16">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center text-xs text-wildz-600">
+                <p>2026 GatheringWildz. All rights reserved.</p>
+                <p class="mt-2 md:mt-0">Designed with precision.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile Menu
+        const mobileBtn = document.getElementById('mobile-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+
+        // Typing Effect
+        const typingElement = document.querySelector('.typing-cursor');
+        const phrases = ['Welcome guys', 'Welcome guys', 'Welcome guys', 'Welcome guys'];
+        let phraseIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+
+        function type() {
+            const current = phrases[phraseIndex];
+            if (isDeleting) {
+                typingElement.textContent = current.substring(0, charIndex - 1);
+                charIndex--;
+            } else {
+                typingElement.textContent = current.substring(0, charIndex + 1);
+                charIndex++;
+            }
+
+            if (!isDeleting && charIndex === current.length) {
+                isDeleting = true;
+                setTimeout(type, 2500);
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                phraseIndex = (phraseIndex + 1) % phrases.length;
+                setTimeout(type, 500);
+            } else {
+                setTimeout(type, isDeleting ? 40 : 80);
+            }
+        }
+        type();
+
+        // Reveal on Scroll
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // Progress Bars Animation
+        const progressObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.querySelectorAll('.progress-fill').forEach((bar, i) => {
+                        setTimeout(() => {
+                            bar.classList.add('active');
+                        }, i * 150);
+                    });
+                    progressObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.3 });
+
+        document.querySelectorAll('.glass-wildz').forEach(el => {
+            if (el.querySelector('.progress-fill')) {
+                progressObserver.observe(el);
+            }
+        });
+
+        // Chart Line Animation
+        const chartObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.querySelectorAll('.chart-line').forEach(line => {
+                        line.classList.add('active');
+                    });
+                    chartObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        document.querySelectorAll('svg').forEach(svg => {
+            if (svg.querySelector('.chart-line')) {
+                chartObserver.observe(svg);
+            }
+        });
+
+        // Smooth Scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Active Navigation
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 300) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+
+    
+</body>
+</html>
